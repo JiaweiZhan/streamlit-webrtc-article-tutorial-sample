@@ -1,26 +1,54 @@
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer
+from streamlit_webrtc import webrtc_streamer, VideoProcessorBase, RTCConfiguration
 import av
-import cv2
+import threading
 
-st.title("My first Streamlit app")
-st.write("Hello, world")
-
-threshold1 = st.slider("Threshold1", min_value=0, max_value=1000, step=1, value=100)
-threshold2 = st.slider("Threshold2", min_value=0, max_value=1000, step=1, value=200)
-
-
-def callback(frame):
-    img = frame.to_ndarray(format="bgr24")
-
-    img = cv2.cvtColor(cv2.Canny(img, threshold1, threshold2), cv2.COLOR_GRAY2BGR)
-
-    return av.VideoFrame.from_ndarray(img, format="bgr24")
-
-webrtc_streamer(
-    key="example",
-    video_frame_callback=callback,
-    rtc_configuration={  # Add this line
-        "iceServers": [{"urls": ["stun:stun.usfamily.net:3478"]}]
-    }
+RTC_CONFIGURATION = RTCConfiguration(
+    {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
 )
+
+st.set_page_config(page_title="Streamlit WebRTC Demo", page_icon="🤖")
+task_list = ["Video Stream"]
+
+with st.sidebar:
+    st.title('Task Selection')
+    task_name = st.selectbox("Select your tasks:", task_list)
+st.title(task_name)
+
+if task_name == task_list[0]:
+    style_list = ['color', 'black and white']
+
+    st.sidebar.header('Style Selection')
+    style_selection = st.sidebar.selectbox("Choose your style:", style_list)
+
+    class VideoProcessor(VideoProcessorBase):
+        def __init__(self):
+            self.model_lock = threading.Lock()
+            self.style = style_list[0]
+
+        def update_style(self, new_style):
+            if self.style != new_style:
+                with self.model_lock:
+                    self.style = new_style
+
+        def recv(self, frame):
+            # img = frame.to_ndarray(format="bgr24")
+            img = frame.to_image()
+            if self.style == style_list[1]:
+                img = img.convert("L")
+
+            # return av.VideoFrame.from_ndarray(img, format="bgr24")
+            return av.VideoFrame.from_image(img)
+
+    ctx = webrtc_streamer(
+        key="example",
+        video_processor_factory=VideoProcessor,
+        rtc_configuration=RTC_CONFIGURATION,
+        media_stream_constraints={
+            "video": True,
+            "audio": False
+        }
+    )
+
+    if ctx.video_processor:
+        ctx.video_transformer.update_style(style_selection)
