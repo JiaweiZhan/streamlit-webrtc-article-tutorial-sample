@@ -4,7 +4,7 @@ import av
 import threading
 
 RTC_CONFIGURATION = RTCConfiguration(
-    {"iceServers": [{"urls": ["stun:stun.skydrone.aero:3478"]}]}
+    {"iceServers": [{"urls": ["stun:stun.romancecompass.com:3478"]}]}
 )
 
 st.set_page_config(page_title="Streamlit WebRTC Demo", page_icon="🤖")
