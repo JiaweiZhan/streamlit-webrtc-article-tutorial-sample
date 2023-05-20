@@ -59,6 +59,3 @@ webrtc_streamer(key="example",
                     "video": True,
                     "audio": False
                 })
-
-        }
-    )
