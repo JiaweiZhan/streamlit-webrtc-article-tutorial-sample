@@ -21,6 +21,6 @@ webrtc_streamer(
     key="example",
     video_frame_callback=callback,
     rtc_configuration={  # Add this line
-        "iceServers": [{"urls": ["stun:stun.ekiga.net:3478"]}]
+        "iceServers": [{"urls": ["stun:stun.usfamily.net:3478"]}]
     }
 )
