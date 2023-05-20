@@ -37,48 +37,28 @@ RTC_CONFIGURATION = RTCConfiguration(
     {"iceServers": get_ice_servers()}
 )
 
-st.set_page_config(page_title="Streamlit WebRTC Demo", page_icon="🤖")
-task_list = ["Video Stream"]
+st.title("My first Streamlit app")
+st.write("Hello, world")
 
-with st.sidebar:
-    st.title('Task Selection')
-    task_name = st.selectbox("Select your tasks:", task_list)
-st.title(task_name)
+threshold1 = st.slider("Threshold1", min_value=0, max_value=1000, step=1, value=100)
+threshold2 = st.slider("Threshold2", min_value=0, max_value=1000, step=1, value=200)
 
-if task_name == task_list[0]:
-    style_list = ['color', 'black and white']
 
-    st.sidebar.header('Style Selection')
-    style_selection = st.sidebar.selectbox("Choose your style:", style_list)
+def callback(frame):
+    img = frame.to_ndarray(format="bgr24")
 
-    class VideoProcessor(VideoProcessorBase):
-        def __init__(self):
-            self.model_lock = threading.Lock()
-            self.style = style_list[0]
+    img = cv2.cvtColor(cv2.Canny(img, threshold1, threshold2), cv2.COLOR_GRAY2BGR)
 
-        def update_style(self, new_style):
-            if self.style != new_style:
-                with self.model_lock:
-                    self.style = new_style
+    return av.VideoFrame.from_ndarray(img, format="bgr24")
 
-        def recv(self, frame):
-            # img = frame.to_ndarray(format="bgr24")
-            img = frame.to_image()
-            if self.style == style_list[1]:
-                img = img.convert("L")
 
-            # return av.VideoFrame.from_ndarray(img, format="bgr24")
-            return av.VideoFrame.from_image(img)
+webrtc_streamer(key="example",
+                video_frame_callback=callback,
+                rtc_configuration=RTC_CONFIGURATION,
+                media_stream_constraints={
+                    "video": True,
+                    "audio": False
+                })
 
-    ctx = webrtc_streamer(
-        key="example",
-        video_processor_factory=VideoProcessor,
-        rtc_configuration=RTC_CONFIGURATION,
-        media_stream_constraints={
-            "video": True,
-            "audio": False
         }
     )
-
-    if ctx.video_processor:
-        ctx.video_transformer.update_style(style_selection)
